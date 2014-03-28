@@ -24,7 +24,8 @@
 	
 	var stars = new createjs.Bitmap(document.getElementById("stars"));
 	stage.addChild(stars);
-	
+	console.log("stars drawn");
+
 	var asteroids = new createjs.Bitmap(document.getElementById("asteroids"));
 	stage.addChild(asteroids);
 	
@@ -34,6 +35,7 @@
 	startscreen.y = 60;
 	
 	var flame = new createjs.Bitmap(document.getElementById("flame"));
+	flame.x = stage.canvas.width + 100; // set flame past stage so it doesn't move across and hit stuff without being fired
 	
 	var shotcount = 0;
 	
@@ -89,9 +91,8 @@
 	var aFills = [ "rgba(255,0,0,1)", "rgba(255,255,0,1)", "rgba(0,255,0,1)", "rgba(0,255,255,1)", "rgba(0,0,255,1)", "rgba(0,0,0,1)" ];
 	var aRotations = [20, 60, 80, 120, 280];
 	
-	
 
-	// RESIZING
+	// RESIZING - only works if you resize the screen. I want it to be normal size so that's why it's like this...it does work though...
 		function onResize() {
 			// browser viewport size
 			var w = window.innerWidth;
@@ -127,7 +128,6 @@
 			onResize();
 		}
 		// END RESIZING	
-
 		
 		
 		// create abductees
@@ -159,7 +159,7 @@
 				if (speed < 2)
 					speed = 2;
 				speedArray.push(speed);
-				console.log("Speed:" + speedArray);
+				//console.log("Speed:" + speedArray);
 			}
 		}
 
@@ -167,8 +167,7 @@
 		// Setup score text
 		var brainCount = 0;
 		var killCount = 0;
-		var scoreTxt = new createjs.Text("", "35px Abel",
-				"#ff7700");
+		var scoreTxt = new createjs.Text("", "35px Abel","#ff7700");
 		scoreTxt.x = 500;
 		scoreTxt.y = 20;
 		
@@ -188,24 +187,20 @@
 		var startTick = function() {
 			createjs.Ticker.addEventListener("tick", tick);
 			createjs.Ticker.setInterval(25);
-			createjs.Ticker.setFPS(30);
+			createjs.Ticker.setFPS(40);
 		}
 
 		// countdown ticker
 		var startCountdown = function() {
 			createjs.Ticker.addEventListener("tick", countdown);
-			createjs.Ticker.setInterval(1);
-			createjs.Ticker.setFPS(30);
+			createjs.Ticker.setInterval(25);
+			createjs.Ticker.setFPS(40);
 		}
-
-		
-// 		var stopTick = function() {
-// 			createjs.Ticker.removeEventListener("tick", tick);
-// 		}
 
 		// start game
 		var startGame = function() {
 			stage.removeChild(startscreen);
+			
 			stage.addChild(scoreTxt);
 			stage.addChild(aIdle);
 			aIdle.x = 100;
@@ -213,17 +208,14 @@
 			startTick();
 			startCountdown();
 			console.log("now in startGame function");
+			//stage.update();
 		}
 
 		// recycle brains and zombies if they are hit or leave the screen
 		recycleDrop = function(drop) {
-
-			//drop.x = 10 + Math.random() * (stage.canvas.width - 40);
 			drop.x = stage.canvas.width - 10;
 			drop.y = stage.canvas.height * Math.random() - 10;
-
 			stage.addChild(drop);
-
 		}
 
 		// initializes brains and zombies based on array length
@@ -239,12 +231,11 @@
 		var gameOverTxt = new createjs.Text("GAME OVER", "90px Abel", "#ff7700");
 		gameOverTxt.x = 200;
 		gameOverTxt.y = 130;
-		var restartTxt = new createjs.Text("(ENTER to restart)", "25px Abel",
-				"#ff7700");
+		var restartTxt = new createjs.Text("(ENTER to restart)", "25px Abel","#ff7700");
 		restartTxt.x = 310;
 		restartTxt.y = 220;
 		var resultsBg = new createjs.Shape();
-		resultsBg.graphics.beginFill("#111").drawRect(100, 100, 600, 280);
+		resultsBg.graphics.beginFill("rgba(0,0,255,0.7)").drawRect(100, 100, 600, 280);
 		var brain = new createjs.Bitmap(document.getElementById("brain"));
 		brain.x = 240;
 		brain.y = 270;
@@ -265,10 +256,17 @@
 		
 		// run opening screen
 		opening();
-
-		// gameover screen with results displayed
+		
+		// game over screen with results displayed
 		var gameOver = function(brainCount, killCount) {
 			dead = true;
+			
+			// change text based on how game ended
+			if(timesUp){
+				gameOverTxt.text = "OUT OF TIME";
+			}else{
+				gameOverTxt.text = "GAME OVER";
+			}
 			
 			var resultsTxt = new createjs.Text("You saved " + brainCount + " brains and killed " + killCount + " zombies.","20px Abel", "#ff7700");
 			resultsTxt.x = 245;
@@ -279,6 +277,7 @@
 			var zombiesTxt = new createjs.Text("x "+ killCount,"30px Abel", "#ff7700");
 			zombiesTxt.x = 520;
 			zombiesTxt.y = 273;
+
 			stage.addChild(resultsBg);
 			stage.addChild(gameOverTxt);
 			stage.addChild(restartTxt);
@@ -287,21 +286,26 @@
 			stage.addChild(zombie);
 			stage.addChild(brainsTxt);
 			stage.addChild(zombiesTxt);
+			
+			stage.update();
+
 			console.log("GAME OVER");
 			console.log("Dead: " + dead);
+			createjs.Ticker.removeEventListener("tick", countdown);
+			createjs.Ticker.removeEventListener("tick", tick);
 		}
 
 		// create countdown timer text
+		var timesUp = false;
 		var timeLeft = 1000;
-		var timerTxt = new createjs.Text("Time: " + timeLeft, "35px Abel",
-				"#ff7700");
+		var timerTxt = new createjs.Text("Time: " + timeLeft, "35px Abel","#ff7700");
 		timerTxt.x = 50;
 		timerTxt.y = 20;
 		// countdown timer stops at 0 and calls gameOver function
 		function countdown() {
-			if (timeLeft <= 0) {
-				timeLeft = 0;
-				gameOver(brainCount, killCount);
+			if (timeLeft == 0) {
+				timesUp = true;
+				//console.log("brains: " + brainCount + " kills: " + killCount);
 			} else {
 				timeLeft -= 1;
 				//console.log("TIME LEFT: " + timeLeft);
@@ -312,8 +316,37 @@
 			}
 		}
 
+		// FOR DEVELOPMENT ONLY // draw the circles for hit points. keep this commented
+// 		var hit1 = new createjs.Shape();
+// 		hit1.graphics.beginFill("red").drawCircle(0, 0, 3);
+// 		var hit2 = new createjs.Shape();
+// 		hit2.graphics.beginFill("red").drawCircle(0, 0, 3);
+// 		var hit3 = new createjs.Shape();
+// 		hit3.graphics.beginFill("red").drawCircle(0, 0, 3);
+// 		var hit4 = new createjs.Shape();
+// 		hit4.graphics.beginFill("red").drawCircle(0, 0, 3);
+// 		var hit5 = new createjs.Shape();
+// 		hit5.graphics.beginFill("red").drawCircle(0, 0, 3);
+// 		stage.addChild(hit1);
+// 		stage.addChild(hit2);
+// 		stage.addChild(hit3);
+		
 		/// TICK!!! ///	
 		function tick() {
+			// FOR DEVELOPMENT ONLY // check hit points. keep this commented unless you want to see the red dots
+// 			hit1.x = aIdle.x;
+// 			hit1.y = aIdle.y;
+// 			hit2.x = aIdle.x + 60;
+// 			hit2.y = aIdle.y;
+// 			hit3.x = aIdle.x - 60;
+// 			hit3.y = aIdle.y;
+// 			hit4.x = aIdle.x;
+// 			hit4.y = aIdle.y - 40;
+// 			hit5.x = aIdle.x;
+// 			hit5.y = aIdle.y + 40;
+			
+			//console.log("X: " + flame.x + " Y: " + flame.y);
+			
 			// start background sound
 			var soundBackground = createjs.Sound.play("sound/bg.mp3");
 
@@ -328,6 +361,11 @@
 			if (asteroids.x == -1600) {
 				stage.addChildAt(asteroids, 1);
 				asteroids.x = 6;
+			}
+			
+			console.log("times up: " + timesUp);
+			if(timesUp == true){
+				gameOver(brainCount, killCount);
 			}
 			
 			// if player is not dead
@@ -349,8 +387,7 @@
 						// all the way to the ufo otherwise the brain doesn't get sucked up
 						if (aAbductee[n].y < (currentY + 10) && beaming == true) {
 							brainCount += 1;
-							var soundBeep = createjs.Sound
-									.play("sound/beep.mp3");
+							var soundBeep = createjs.Sound.play("sound/beep.mp3");
 							console.log("SCORE:" + brainCount);
 							aAbductee[n].x = -1;
 							updateScore();
@@ -374,10 +411,9 @@
 						stage.addChild(aExplode); // explosion animation appears on hit
 						aExplode.x = aEnemy[n].x; // at hit location
 						aExplode.y = aEnemy[n].y;
-						flame.x = stage.canvas.width; // shot is sent offstage so that it doesn't hit other zombies
+						flame.x = stage.canvas.width + 100; // shot is sent offstage so that it doesn't hit other zombies
 						aEnemy[n].x = 0; // zombie is sent to the left of the screen so it doesn't hit the ufo
-						var soundExplode = createjs.Sound
-								.play("sound/explode.mp3");
+						var soundExplode = createjs.Sound.play("sound/explode.mp3");
 						stage.removeChild(flame);
 						stage.removeChild(aEnemy[n]);
 // 						console.log("HIT !!!!!!!!!!!!");
@@ -387,36 +423,41 @@
 					}
 					aEnemy[n].x -= speedArray[n];
 					// collision tests between ufo and zombies
-					var idleCollide = aIdle.localToLocal(0, 0, aEnemy[n]);
-					var forwardCollide = aForward.localToLocal(0, 0, aEnemy[n]);
-					// idle hit (or up and down)
-					if (aEnemy[n].hitTest(idleCollide.x, idleCollide.y)) {
+					var idleCollide1 = aIdle.localToLocal(60, 0, aEnemy[n]);
+					var idleCollide2 = aIdle.localToLocal(-60, 0, aEnemy[n]);
+					var idleCollide3 = aIdle.localToLocal(0, 40, aEnemy[n]);
+					var idleCollide4 = aIdle.localToLocal(0, -40, aEnemy[n]);
+					var forwardCollide1 = aForward.localToLocal(60, 0, aEnemy[n]);
+					var forwardCollide2 = aForward.localToLocal(-60, 0, aEnemy[n]);
+					var forwardCollide3 = aForward.localToLocal(0, 40, aEnemy[n]);
+					var forwardCollide4 = aForward.localToLocal(0, -40, aEnemy[n]);
+					var backwardCollide1 = aBackward.localToLocal(60, 0, aEnemy[n]);
+					var backwardCollide2 = aBackward.localToLocal(-60, 0, aEnemy[n]);
+					var backwardCollide3 = aForward.localToLocal(0, 40, aEnemy[n]);
+					var backwardCollide4 = aForward.localToLocal(0, -40, aEnemy[n]);
+					
+					if (aEnemy[n].hitTest(idleCollide1.x, idleCollide1.y)
+							|| aEnemy[n].hitTest(idleCollide2.x, idleCollide2.y)
+							|| aEnemy[n].hitTest(idleCollide3.x, idleCollide3.y)
+							|| aEnemy[n].hitTest(idleCollide4.x, idleCollide4.y)
+							|| aEnemy[n].hitTest(forwardCollide1.x, forwardCollide1.y)
+							|| aEnemy[n].hitTest(forwardCollide2.x, forwardCollide2.y)
+							|| aEnemy[n].hitTest(forwardCollide3.x, forwardCollide3.y)
+							|| aEnemy[n].hitTest(forwardCollide4.x, forwardCollide4.y)
+							|| aEnemy[n].hitTest(backwardCollide1.x, backwardCollide1.y)
+							|| aEnemy[n].hitTest(backwardCollide2.x, backwardCollide2.y)
+							|| aEnemy[n].hitTest(backwardCollide3.x, backwardCollide3.y)
+							|| aEnemy[n].hitTest(backwardCollide4.x, backwardCollide4.y)) {
 						stage.addChild(aExplode);
 						aExplode.x = currentX;
 						aExplode.y = currentY;
 						stage.removeChild(aIdle);
-						stage.removeChild(aEnemy[n]);
-						var soundKilled = createjs.Sound
-								.play("sound/bigexplode.mp3");
-						console.log("You died while idle");
-						console.log("current frame: "
-								+ aExplode.currentAnimationFrame);
-						if (aExplode.currentAnimationFrame >= 1) {
-							gameOver(brainCount, killCount);
-						}
-					}
-					// forward hit
-					if (aEnemy[n].hitTest(forwardCollide.x, forwardCollide.y)) {
-						stage.addChild(aExplode);
-						aExplode.x = currentX;
-						aExplode.y = currentY;
 						stage.removeChild(aForward);
+						stage.removeChild(aBackward);
 						stage.removeChild(aEnemy[n]);
-						var soundKilled = createjs.Sound
-								.play("sound/bigexplode.mp3");
-						console.log("You died while moving forward");
-						console.log("current frame: "
-								+ aExplode.currentAnimationFrame);
+						var soundKilled = createjs.Sound.play("sound/bigexplode.mp3");
+						console.log("You died while idle");
+						//console.log("current frame: " + aExplode.currentAnimationFrame);
 						if (aExplode.currentAnimationFrame >= 1) {
 							gameOver(brainCount, killCount);
 						}
@@ -426,31 +467,6 @@
 						recycleDrop(aEnemy[n]);
 					}
 				}
-
-// 				// MOUSE functions for mobile devices
-// 				window.onmousemove = function(evtMouse) {
-// 					evtMouse = evtMouse || window.event; // this is for IE
-// 					var mouseX = evtMouse.clientX;
-// 					var mouseY = evtMouse.clientY;
-// 					//stage.addChild(aForward);
-// 					aIdle.x = mouseX;
-// 					aIdle.y = mouseY;
-
-// 					//stage.update();
-// 				};
-
-// 				window.onmousedown = function(evtClick) {
-
-// 					var mouseX = evtClick.clientX;
-// 					var mouseY = evtClick.clientY;
-// 					stage.addChild(aLand);
-// 					stage.addChild(aBeam);
-// 					aBeam.x = mouseX;
-// 					aBeam.y = mouseY;
-// 					aLand.x = mouseX;
-// 					aLand.y = mouseY;
-
-// 				}
 
 				// setup keycodes for keyboard input
 				var KEYCODE_RIGHT = 39;
@@ -469,24 +485,11 @@
 				// listen for key down events
 				window.onkeydown = function(e) {
 					stage.removeChild(aIdle);
-
-					// 				currentX = aIdle.x;
-					// 				currentY = aIdle.y;
-
+					
 					// if player has died and presses enter, page reloads
 					if (dead) {
 						if (e.keyCode == 13) {
 							window.location.reload();
-							//		 						dead = false;
-							//		 						console.log("you pressed enter");
-							//		 					//createjs.Ticker.on("tick", tick);
-							//		 						score = 0;
-
-							//		 						stage.removeChild(gameOverTxt);
-							//		 						updateScore();
-							//		 						//startTick();
-							//		 						startGame();
-
 						}
 					}
 					// listen for specific key inputs only when not beaming
@@ -513,8 +516,7 @@
 								shotcount++;
 								flame.x = currentX + 40; // start flame on right side of ufo
 								flame.y = currentY;
-								var soundShot = createjs.Sound
-										.play("sound/shot.mp3");
+								var soundShot = createjs.Sound.play("sound/shot.mp3", createjs.Sound.INTERRUPT_EARLY, 0, 0, 0, 1, 0);
 							}
 							break;
 						case KEYCODE_SHIFT: // shift key
@@ -525,9 +527,8 @@
 							aLand.x = currentX;
 							aLand.y = currentY;
 							beaming = true;
-							console.log("Beam: " + beaming);
-							var soundBeam = createjs.Sound
-									.play("sound/beam.mp3");
+							//console.log("Beam: " + beaming);
+							var soundBeam = createjs.Sound.play("sound/beam.mp3");
 							break;
 						// if anything else is pressed, defaults to idle animation and stays in same position
 						default:
@@ -549,8 +550,20 @@
 				// set bounds of canvas for the ufo to stay within
 				if (aForward.x >= (stage.canvas.width - 60))
 					aForward.x = stage.canvas.width - 60;
+				if (aForward.x <= 60)
+					aForward.x = 60;
+				if (aForward.y <= 42)
+					aForward.y = 42;
+				if (aForward.y >= (stage.canvas.height - 42))
+					aForward.y = stage.canvas.height - 42;
+				if (aBackward.x >= (stage.canvas.width - 60))
+					aBackward.x = stage.canvas.width - 60;
 				if (aBackward.x <= 60)
 					aBackward.x = 60;
+				if (aBackward.y <= 42)
+					aBackward.y = 42;
+				if (aBackward.y >= (stage.canvas.height - 42))
+					aBackward.y = stage.canvas.height - 42;
 				if (aIdle.y <= 42)
 					aIdle.y = 42;
 				if (aIdle.y >= (stage.canvas.height - 42))
@@ -573,19 +586,19 @@
 					switch (e.keyCode) {
 					case KEYCODE_RIGHT: // right arrow key
 						rightArrow = false;
-						console.log("right:" + rightArrow);
+						//console.log("right:" + rightArrow);
 						break;
 					case KEYCODE_LEFT: // left arrow key
 						leftArrow = false;
-						console.log("left:" + leftArrow);
+						//console.log("left:" + leftArrow);
 						break;
 					case KEYCODE_UP: // up arrow key
 						upArrow = false;
-						console.log("up:" + upArrow);
+						//console.log("up:" + upArrow);
 						break;
 					case KEYCODE_DOWN: // down arrow key
 						downArrow = false;
-						console.log("down:" + downArrow);
+						//console.log("down:" + downArrow);
 						break;
 					case KEYCODE_SHIFT:
 						beaming = false;
@@ -601,6 +614,7 @@
 				var moveRight = function() {
 					stage.removeChild(aBackward);
 					stage.removeChild(aIdle);
+					aIdle.x = -100; //take it off the stage so it doesn't get hit
 					stage.addChild(aForward);
 					aForward.x += 10;
 					currentX = aForward.x;
@@ -609,24 +623,27 @@
 				var moveRightUp = function() {
 					stage.removeChild(aForward);
 					stage.removeChild(aIdle);
+					aIdle.x = -100; //take it off the stage so it doesn't get hit
 					stage.addChild(aForward);
-					aForward.x += 5;
-					aForward.y -= 5;
+					aForward.x += 8;
+					aForward.y -= 8;
 					currentX = aForward.x;
 					currentY = aForward.y;
 				}
 				var moveRightDown = function() {
 					stage.removeChild(aForward);
 					stage.removeChild(aIdle);
+					aIdle.x = -100; //take it off the stage so it doesn't get hit
 					stage.addChild(aBackward);
-					aBackward.x += 5;
-					aBackward.y += 5;
+					aBackward.x += 8;
+					aBackward.y += 8;
 					currentX = aBackward.x;
 					currentY = aBackward.y;
 				}
 				var moveLeft = function() {
 					stage.removeChild(aForward);
 					stage.removeChild(aIdle);
+					aIdle.x = -100; //take it off the stage so it doesn't get hit
 					stage.addChild(aBackward);
 					aBackward.x -= 10;
 					currentX = aBackward.x;
@@ -635,18 +652,20 @@
 				var moveLeftUp = function() {
 					stage.removeChild(aBackward);
 					stage.removeChild(aIdle);
+					aIdle.x = -100; //take it off the stage so it doesn't get hit
 					stage.addChild(aBackward);
-					aBackward.x -= 5;
-					aBackward.y -= 5;
+					aBackward.x -= 8;
+					aBackward.y -= 8;
 					currentX = aBackward.x;
 					currentY = aBackward.y;
 				}
 				var moveLeftDown = function() {
 					stage.removeChild(aBackward);
 					stage.removeChild(aIdle);
+					aIdle.x = -100; //take it off the stage so it doesn't get hit
 					stage.addChild(aForward);
-					aForward.x -= 5;
-					aForward.y += 5;
+					aForward.x -= 8;
+					aForward.y += 8;
 					currentX = aForward.x;
 					currentY = aForward.y;
 				}
@@ -693,6 +712,31 @@
 					moveLeftDown();
 				}
 
+// 				// MOUSE functions for mobile devices
+// 				window.onmousemove = function(evtMouse) {
+// 					evtMouse = evtMouse || window.event; // this is for IE
+// 					var mouseX = evtMouse.clientX;
+// 					var mouseY = evtMouse.clientY;
+// 					//stage.addChild(aForward);
+// 					aIdle.x = mouseX;
+// 					aIdle.y = mouseY;
+
+// 					//stage.update();
+// 				};
+
+// 				window.onmousedown = function(evtClick) {
+
+// 					var mouseX = evtClick.clientX;
+// 					var mouseY = evtClick.clientY;
+// 					stage.addChild(aLand);
+// 					stage.addChild(aBeam);
+// 					aBeam.x = mouseX;
+// 					aBeam.y = mouseY;
+// 					aLand.x = mouseX;
+// 					aLand.y = mouseY;
+
+// 				}
+				
 				// update the stage:
 				stage.update();
 			}
