@@ -1,3 +1,3 @@
-The OpenShift `nodejs` cartridge documentation can be found at:
+Space Zombies
 
-https://github.com/openshift/origin-server/tree/master/cartridges/openshift-origin-cartridge-nodejs/README.md
+This game was created using the HTML5 canvas.

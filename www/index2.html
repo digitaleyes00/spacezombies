@@ -43,6 +43,8 @@
 	var leftArrow = false;
 	var upArrow = false;
 	var downArrow = false;
+	var spacebar = false;
+	var shootleft = false;
 	var currentX = 100;
 	var currentY = 200;
 	var aAbductee = new Array();
@@ -383,7 +385,7 @@
 						//console.log("COLLISION DETECTED!!!");
 						aAbductee[n].x = currentX; // stop horizontal movement
 						aAbductee[n].y -= 3; // suck brains up into ufo
-						// adds to brains score only if beam is still on and brain makes it
+						// adds to brains score only in beam is still on and brain makes it
 						// all the way to the ufo otherwise the brain doesn't get sucked up
 						if (aAbductee[n].y < (currentY + 10) && beaming == true) {
 							brainCount += 1;
@@ -508,16 +510,7 @@
 							downArrow = true;
 							break;
 						case KEYCODE_SPACE: // spacebar to shoot
-							stage.addChild(aIdle);
-							if (shotcount != 0) { // only allow shot to fire if there are no shots already on the screen
-								console.log("already on screen");
-							} else {
-								stage.addChild(flame);
-								shotcount++;
-								flame.x = currentX + 40; // start flame on right side of ufo
-								flame.y = currentY;
-								var soundShot = createjs.Sound.play("sound/shot.mp3", createjs.Sound.INTERRUPT_EARLY, 0, 0, 0, 1, 0);
-							}
+							spacebar = true;
 							break;
 						case KEYCODE_SHIFT: // shift key
 							stage.addChild(aLand);
@@ -541,12 +534,20 @@
 				} // end keydown
 				
 				// handle shots fired
-				if (flame.x < stage.canvas.width) { // move shot across screen only when it is less than the width of the canvas
-					flame.x += 10;
-				} else { // otherwise set shotcount to 0 and allow for another shot to be fired
-					shotcount = 0;
+				if (shootleft){
+					if (flame.x > 0) {
+						flame.x -= 10;
+					}else{
+						shotcount = 0;
+					}
+				}else{
+					if (flame.x < stage.canvas.width) { // move shot across screen only when it is less than the width of the canvas
+						flame.x += 10;
+					} else { // otherwise set shotcount to 0 and allow for another shot to be fired
+						shotcount = 0;
+					}			
 				}
-				
+			
 				// set bounds of canvas for the ufo to stay within
 				if (aForward.x >= (stage.canvas.width - 60))
 					aForward.x = stage.canvas.width - 60;
@@ -598,6 +599,10 @@
 						break;
 					case KEYCODE_DOWN: // down arrow key
 						downArrow = false;
+						//console.log("down:" + downArrow);
+						break;
+					case KEYCODE_SPACE: // down arrow key
+						spacebar = false;
 						//console.log("down:" + downArrow);
 						break;
 					case KEYCODE_SHIFT:
@@ -681,6 +686,24 @@
 					currentX = aIdle.x;
 					currentY = aIdle.y;
 				}
+				var shoot = function() {
+					stage.addChild(aIdle);
+					if (shotcount != 0) { // only allow shot to fire if there are no shots already on the screen
+						console.log("already on screen");
+					} else {
+						stage.addChild(flame);
+						//shotcount++;
+						flame.y = currentY;
+						var soundShot = createjs.Sound.play("sound/shot.mp3", createjs.Sound.INTERRUPT_EARLY, 0, 0, 0, 1, 0);
+						if(shootleft){
+							flame.rotation = 180;
+							flame.x = currentX - 40; // start flame on left side of ufo	
+						}else{
+						flame.x = currentX + 40; // start flame on right side of ufo
+						}
+					}
+					console.log("shotcount: " + shotcount);
+				}
 
 				// call appropriate functions based on boolean values of key inputs
 				if (rightArrow == true) {
@@ -711,6 +734,28 @@
 				if (leftArrow == true && downArrow == true) {
 					moveLeftDown();
 				}
+				
+				if (spacebar == true) {
+					if(leftArrow == true){
+						shootleft = true;
+						shoot();
+					}
+					if(rightArrow == true){
+						shootleft = false;
+						shoot();
+					}else{
+						shoot();
+					}
+					shotcount++;
+				}
+// 				if (leftArrow == true && spacebar == true) {
+// 					shootleft = true;
+// 					shoot();
+// 				}
+// 				if (rightArrow == true && spacebar == true) {
+// 					shootleft = false;
+// 					shoot();
+// 				}
 
 // 				// MOUSE functions for mobile devices
 // 				window.onmousemove = function(evtMouse) {
