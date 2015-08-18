@@ -6,3 +6,5 @@ lib/
 *.swp
 node_modules/
 npm-debug.log
+Game.html
+Game2.html
